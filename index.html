@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Company News - Microsoft</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1em; background: #f8f9fa; }
+    h1 { text-align: center; color: #333; }
+    .news-card {
+      background: white; margin: 1em 0; padding: 1em;
+      border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .news-card h2 { margin-top: 0; font-size: 1.2em; }
+    .news-card p { color: #555; }
+    .news-card a { color: #0066cc; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Microsoft News</h1>
+  <div id="news-container">Loading news...</div>
+
+  <script>
+    const company = "Microsoft";
+    const newsContainer = document.getElementById("news-container");
+
+    // Option A: Using NewsData.io API (requires free API key)
+    const API_KEY = "YOUR_NEWSDATA_API_KEY"; // <-- Replace with your key
+    const apiURL = `https://newsdata.io/api/1/news?apikey=${API_KEY}&q=${company}&language=en`;
+
+    // Option B: Fallback to RSS (e.g., Google News RSS)
+    async function fetchRSSFallback() {
+      const rssURL = `https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=${company}`;
+      const res = await fetch(rssURL);
+      const data = await res.json();
+      displayNews(data.items);
+    }
+
+    async function fetchNews() {
+      try {
+        const res = await fetch(apiURL);
+        const data = await res.json();
+        if (data.results && data.results.length) {
+          displayNews(data.results.map(item => ({
+            title: item.title,
+            description: item.description,
+            link: item.link
+          })));
+        } else {
+          fetchRSSFallback(); // fallback
+        }
+      } catch (e) {
+        console.error("API failed, using fallback.", e);
+        fetchRSSFallback();
+      }
+    }
+
+    function displayNews(articles) {
+      newsContainer.innerHTML = "";
+      articles.forEach(article => {
+        const card = document.createElement("div");
+        card.className = "news-card";
+        card.innerHTML = `
+          <h2><a href="${article.link}" target="_blank">${article.title}</a></h2>
+          <p>${article.description || ''}</p>
+        `;
+        newsContainer.appendChild(card);
+      });
+    }
+
+    fetchNews();
+  </script>
+</body>
+</html>
