@@ -1,6 +1,5 @@
 const company = "Microsoft";
 const competitors = ["Google", "Apple", "Amazon", "Meta", "IBM"];
-const API_KEY = "YOUR_NEWSDATA_API_KEY"; // <-- Replace with your key
 
 // Helper: Basic sentiment analysis using keywords
 function getSentiment(text) {
@@ -13,40 +12,30 @@ function getSentiment(text) {
   return score > 0 ? "positive" : score < 0 ? "negative" : "neutral";
 }
 
-// Helper: Guess if news is local (US) or global (not US)
+// Helper: Guess if news is local (US) or global (not US) based on title/description
 function isLocal(article) {
-  if (article.country === "us" || (article.source_id && article.source_id.includes("us"))) return true;
-  if (article.link && article.link.includes(".com")) return true;
-  return false;
+  // Try to detect US/local news by keywords in title/description
+  const localKeywords = ["US", "United States", "America", "U.S.", "USA"];
+  const text = (article.title || "") + " " + (article.description || "");
+  return localKeywords.some(k => text.includes(k));
 }
 
-// Fetch news for a company
+// Fetch news for a company using Google News RSS (no API key required)
 async function fetchCompanyNews(query) {
-  const apiURL = `https://newsdata.io/api/1/news?apikey=${API_KEY}&q=${encodeURIComponent(query)}&language=en`;
+  const rssURL = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
+  const apiURL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssURL)}`;
   try {
     const res = await fetch(apiURL);
     const data = await res.json();
-    if (data.results && data.results.length) {
-      return data.results.map(item => ({
-        title: item.title,
-        description: item.description,
-        link: item.link,
-        country: item.country,
-        source_id: item.source_id
-      }));
-    }
-  } catch (e) {
-    // fallback to RSS
-    const rssURL = `https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=${encodeURIComponent(query)}`;
-    const res = await fetch(rssURL);
-    const data = await res.json();
-    if (data.items) {
+    if (data.items && data.items.length) {
       return data.items.map(item => ({
         title: item.title,
         description: item.description,
         link: item.link
       }));
     }
+  } catch (e) {
+    // If fetch fails, return empty array
   }
   return [];
 }
@@ -94,12 +83,14 @@ async function main() {
   renderNews("global-news", global.slice(0, 5));
   renderNews("local-news", local.slice(0, 5));
 
-  // Fetch competitor news
+  // Fetch competitor news in parallel
   let competitorArticles = [];
-  for (const comp of competitors) {
-    const compNews = await fetchCompanyNews(comp);
-    competitorArticles = competitorArticles.concat(compNews.slice(0, 2));
-  }
+  const competitorNewsArrays = await Promise.all(
+    competitors.map(comp => fetchCompanyNews(comp))
+  );
+  competitorNewsArrays.forEach(arr => {
+    competitorArticles = competitorArticles.concat(arr.slice(0, 2));
+  });
   renderNews("competitor-news", competitorArticles);
 }
 
