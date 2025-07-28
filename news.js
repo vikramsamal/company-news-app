@@ -1,5 +1,12 @@
 const company = "Microsoft";
-const competitors = ["Google", "Apple", "Amazon", "Meta", "IBM"];
+const companySymbol = "MSFT";
+const competitors = [
+  { name: "Google", symbol: "GOOGL" },
+  { name: "Apple", symbol: "AAPL" },
+  { name: "Amazon", symbol: "AMZN" },
+  { name: "Meta", symbol: "META" },
+  { name: "IBM", symbol: "IBM" }
+];
 
 // Helper: Basic sentiment analysis using keywords
 function getSentiment(text) {
@@ -40,6 +47,70 @@ async function fetchCompanyNews(query) {
   return [];
 }
 
+// Fetch stock data for a company
+async function fetchStockData(symbol) {
+  // Using a free API that doesn't require an API key for demo purposes
+  // In a production environment, you would use a proper financial API with authentication
+  try {
+    // For demonstration, we'll generate mock stock data
+    // In a real implementation, you would call an actual stock API
+    const mockData = {
+      symbol: symbol,
+      price: (Math.random() * 300 + 100).toFixed(2), // Random price between 100 and 400
+      change: (Math.random() * 10 - 5).toFixed(2),   // Random change between -5 and 5
+      changePercent: (Math.random() * 5 - 2.5).toFixed(2) // Random percent change between -2.5% and 2.5%
+    };
+    return mockData;
+  } catch (e) {
+    console.error("Error fetching stock data:", e);
+    return null;
+  }
+}
+
+// Render stock data
+function renderStockData(stockData) {
+  const container = document.getElementById("msft-stock");
+  if (!stockData) {
+    container.innerHTML = "<p>Failed to load stock data.</p>";
+    return;
+  }
+  
+  const changeClass = parseFloat(stockData.change) >= 0 ? "positive" : "negative";
+  const changeSymbol = parseFloat(stockData.change) >= 0 ? "+" : "";
+  
+  container.innerHTML = `
+    <div class="stock-price">$${stockData.price}</div>
+    <div class="stock-change ${changeClass}">${changeSymbol}${stockData.change} (${changeSymbol}${stockData.changePercent}%)</div>
+  `;
+}
+
+// Render competitor stock data
+function renderCompetitorStocks(stockDataArray) {
+  const container = document.getElementById("competitor-stocks");
+  if (!stockDataArray || stockDataArray.length === 0) {
+    container.innerHTML = "<p>Failed to load competitor stock data.</p>";
+    return;
+  }
+  
+  let html = "";
+  stockDataArray.forEach(stock => {
+    if (stock) {
+      const changeClass = parseFloat(stock.change) >= 0 ? "positive" : "negative";
+      const changeSymbol = parseFloat(stock.change) >= 0 ? "+" : "";
+      
+      html += `
+        <div class="competitor-stock">
+          <div><strong>${stock.symbol}</strong></div>
+          <div class="stock-price">$${stock.price}</div>
+          <div class="stock-change ${changeClass}">${changeSymbol}${stock.change}%</div>
+        </div>
+      `;
+    }
+  });
+  
+  container.innerHTML = html;
+}
+
 // Render news cards
 function renderNews(containerId, articles) {
   const container = document.getElementById(containerId);
@@ -60,6 +131,10 @@ function renderNews(containerId, articles) {
 }
 
 async function main() {
+  // Fetch main company stock data
+  const stockData = await fetchStockData(companySymbol);
+  renderStockData(stockData);
+  
   // Fetch main company news
   const articles = await fetchCompanyNews(company);
 
@@ -83,15 +158,27 @@ async function main() {
   renderNews("global-news", global.slice(0, 5));
   renderNews("local-news", local.slice(0, 5));
 
-  // Fetch competitor news in parallel
+  // Fetch competitor news and stock data in parallel
   let competitorArticles = [];
-  const competitorNewsArrays = await Promise.all(
-    competitors.map(comp => fetchCompanyNews(comp))
+  const competitorPromises = competitors.map(comp => 
+    Promise.all([
+      fetchCompanyNews(comp.name),
+      fetchStockData(comp.symbol)
+    ])
   );
-  competitorNewsArrays.forEach(arr => {
-    competitorArticles = competitorArticles.concat(arr.slice(0, 2));
+  
+  const competitorResults = await Promise.all(competitorPromises);
+  
+  // Process competitor news
+  competitorResults.forEach(([newsArray, stockData]) => {
+    competitorArticles = competitorArticles.concat(newsArray.slice(0, 2));
   });
+  
+  // Extract stock data for rendering
+  const competitorStocks = competitorResults.map(([_, stockData]) => stockData);
+  
   renderNews("competitor-news", competitorArticles);
+  renderCompetitorStocks(competitorStocks);
 }
 
 main();

@@ -16,30 +16,63 @@
         .news-card h3 { margin-top: 0; font-size: 1.1em; }
         .news-card p { color: #555; }
         .news-card a { color: #0066cc; text-decoration: none; }
+        .stock-info {
+            background: white; margin: 1em 0; padding: 1em;
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stock-price { font-size: 1.5em; font-weight: bold; }
+        .stock-change { font-size: 1em; }
+        .positive { color: green; }
+        .negative { color: red; }
+        .competitor-stock {
+            display: inline-block;
+            width: 150px;
+            margin: 0.5em;
+            padding: 0.5em;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>Microsoft Stock News</h1>
+    
+    <div class="stock-info">
+        <h2>Microsoft Stock (MSFT)</h2>
+        <div id="msft-stock">Loading...</div>
+    </div>
+    
     <div class="news-section">
         <h2>Top Positive News</h2>
         <div id="positive-news">Loading...</div>
     </div>
+    
     <div class="news-section">
         <h2>Top Negative News</h2>
         <div id="negative-news">Loading...</div>
     </div>
+    
     <div class="news-section">
         <h2>Related Global News</h2>
         <div id="global-news">Loading...</div>
     </div>
+    
     <div class="news-section">
         <h2>Related Local News</h2>
         <div id="local-news">Loading...</div>
     </div>
+    
+    <div class="news-section">
+        <h2>Competitor Stocks</h2>
+        <div id="competitor-stocks">Loading...</div>
+    </div>
+    
     <div class="news-section">
         <h2>Competitor News</h2>
         <div id="competitor-news">Loading...</div>
     </div>
+    
     <script src="news.js"></script>
 </body>
 </html>
